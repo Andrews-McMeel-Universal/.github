@@ -1,24 +1,36 @@
-name: Lint GitHub Actions workflows
+name: Lint and Format Code
 
-on: 
+on:
   pull_request:
     types: [opened, synchronize, reopened]
     branches: [main, development]
-    paths:
-      - .github/
-  workflow_dispatch: {}
+  workflow_call:
 
 jobs:
-  actionlint:
+  prettier:
+    name: Prettier Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Enforce Prettier
+        uses: actionsx/prettier@v2
+        with:
+           args: --check .
+
+  lint-workflows:
+    name: Workflow linter
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
 
       - name: Download actionlint
         id: get_actionlint
         run: bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
         shell: bash
 
-      - name: Check workflow files
+      - name: Lint workflow files
         run: ${{ steps.get_actionlint.outputs.executable }} -color -ignore "SC2086" -ignore "SC2129"
         shell: bash
