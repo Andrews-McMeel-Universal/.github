@@ -34,17 +34,12 @@ jobs:
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
 
-      - name: Approve a PR if not already approved
-        if: steps.dependabot-metadata.outputs.update-type != 'version-update:semver-major'
-        run: |
-          gh pr checkout "$PR_URL" # sets the upstream metadata for `gh pr status`
-          if [ "$(gh pr status --json reviewDecision -q .currentBranch.reviewDecision)" != "APPROVED" ];
-          then gh pr review --approve "$PR_URL"
-          else echo "PR already approved, skipping additional approvals to minimize emails/notification noise.";
-          fi
-        env:
-          PR_URL: ${{github.event.pull_request.html_url}}
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      - name: Auto Approve Dependabot PRs
+        uses: hmarr/auto-approve-action@v3.1.0
+        if: github.actor == 'dependabot[bot]' || github.actor == 'dependabot-preview[bot]'
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+
       # Finally, this sets the PR to allow auto-merging for patch and minor
       # updates if all checks pass
       - name: Enable auto-merge for Dependabot PRs
