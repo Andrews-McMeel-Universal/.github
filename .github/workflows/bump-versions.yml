@@ -1,0 +1,19 @@
+name: "Bump Version"
+
+on:
+  workflow_dispatch:
+    inputs:
+      releaseType:
+        type: choice
+        description: Type of release
+        options:
+          - major
+          - minor
+          - patch
+
+jobs:
+  bump-versions:
+    name: Bump Versions
+    uses: Andrews-McMeel-Universal/reusable_workflows/.github/workflows/bump-versions.yaml@2.2.4
+    with:
+      releaseType: ${{ inputs.releaseType }}
