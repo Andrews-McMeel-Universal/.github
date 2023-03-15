@@ -3,9 +3,7 @@ name: Dependabot Automations
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-    branches:
-      # Filter by Dependabot PRs
-      - 'dependabot/**'
+    branches: [main]
 
 permissions:
   pull-requests: write
@@ -18,6 +16,7 @@ concurrency:
 
 jobs:
   dependabot-automations:
+    if: ${{ github.actor == 'dependabot[bot]' }}
     name: Dependabot PR Automations
     uses: Andrews-McMeel-Universal/reusable_workflows/.github/workflows/dependabot-automations.yaml@2.2.4
 
