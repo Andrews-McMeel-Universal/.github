@@ -14,6 +14,6 @@ on:
 jobs:
   bump-versions:
     name: Bump Versions
-    uses: Andrews-McMeel-Universal/reusable_workflows/.github/workflows/bump-versions.yaml@2.2.4
+    uses: Andrews-McMeel-Universal/reusable_workflows/.github/workflows/bump-versions.yaml@2.2.5
     with:
       releaseType: ${{ inputs.releaseType }}
