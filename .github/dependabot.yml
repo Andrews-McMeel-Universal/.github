@@ -3,17 +3,17 @@
 
 version: 2
 updates:
-  - package-ecosystem: 'github-actions'
-    directory: '.github/'
+  - package-ecosystem: "github-actions"
+    directory: ".github/"
     schedule:
-      interval: 'monthly'
-      day: 'monday'
+      interval: "monthly"
+      day: "monday"
     labels:
-      - 'devops'
-      - 'dependencies'
+      - "devops"
+      - "dependencies"
     reviewers:
-      - 'Andrews-McMeel-Universal/devops-engineers'
+      - "Andrews-McMeel-Universal/devops-engineers"
     open-pull-requests-limit: 10
     commit-message:
       # Prefix all commit messages with "github-actions"
-      prefix: 'github-actions'
+      prefix: "github-actions"

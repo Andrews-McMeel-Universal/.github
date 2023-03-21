@@ -3,7 +3,7 @@ name: Dependabot Automations
 on:
   pull_request_target:
     types: [opened, synchronize, reopened]
-    branches: [main]
+    branches: [main, development]
 
 permissions:
   pull-requests: write
