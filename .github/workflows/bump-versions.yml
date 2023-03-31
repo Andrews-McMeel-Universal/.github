@@ -1,4 +1,4 @@
-name: 'Bump Version'
+name: "Bump Version"
 
 on:
   workflow_dispatch:
@@ -19,4 +19,3 @@ jobs:
       releaseType: ${{ inputs.releaseType }}
     secrets:
       PAT_ACTION_CI: ${{ secrets.PAT_ACTION_CI }}
-

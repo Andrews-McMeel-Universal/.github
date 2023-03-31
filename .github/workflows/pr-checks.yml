@@ -18,7 +18,7 @@ jobs:
     uses: Andrews-McMeel-Universal/reusable_workflows/.github/workflows/codeowners-validation.yaml@2.2.6
 
   jira-lint:
-    if: ${{ github.actor != 'dependabot[bot]' }}
+    if: ${{ github.actor != 'dependabot[bot]' && github.ref != 'refs/heads/development' || github.ref != 'refs/heads/main' }}
     name: Jira PR Linter
     uses: Andrews-McMeel-Universal/reusable_workflows/.github/workflows/jira-lint.yaml@2.2.6
     with:
