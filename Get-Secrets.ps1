@@ -14,11 +14,11 @@ if (!(Get-Module -ListAvailable Az)) {
 Import-Module Az -ErrorAction SilentlyContinue
 Clear-Content -Path $File -ErrorAction SilentlyContinue
 
-if (!$PSBoundParameters.ContainsKey('Environment')) {
-    Write-Host "Environment missing. Defaulting to development." -ForegroundColor DarkGray
-}
-
 if (!"$KeyVaultName") {
+    if (!$PSBoundParameters.ContainsKey('Environment')) {
+        Write-Host "Environment missing. Defaulting to development." -ForegroundColor DarkGray
+    }
+
     Write-Host "Searching for Key Vault..." -ForegroundColor DarkGray
     $KeyVaultName = (Get-AzKeyVault -Tag @{"environment" = "$Environment" } | Get-AzKeyVault -Tag @{"repository-name" = "$RepositoryName" }).VaultName
     Write-Host "Key Vault found: $KeyVaultName" -ForegroundColor DarkGray
