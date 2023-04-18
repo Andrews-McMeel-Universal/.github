@@ -46,18 +46,20 @@ $KeyVaultNames | ForEach-Object {
 
 Add-Content -Path "${File}.tmp" -Value ($KeyVaults | ConvertTo-Json)
 
-if ((Test-Path "${File}") -and (((Get-FileHash "${File}.tmp").Hash) -ne ((Get-FileHash "${File}").Hash))) {
-    $choice = $(Write-Host "The local copy of $File does not match what is currently in the Azure Key Vaults. Do you still want to overwrite it? (Y/N)" -ForegroundColor Yellow; Read-Host)
-    if ($choice.ToUpper() -eq "N") {
+if (Test-Path "${File}") {
+    if (((Get-FileHash "${File}.tmp").Hash) -ne ((Get-FileHash "${File}").Hash)) {
+        $choice = $(Write-Host "The local copy of $File does not match what is currently in the Azure Key Vaults. Do you still want to overwrite it? (Y/N)" -ForegroundColor Yellow; Read-Host)
+        if ($choice.ToUpper() -eq "N") {
+            Write-Host "No changes made to $File" -ForegroundColor DarkGray
+            Remove-Item -Path "${File}.tmp" -ErrorAction SilentlyContinue
+            exit 0
+        }
+    }
+    else {
         Write-Host "No changes made to $File" -ForegroundColor DarkGray
         Remove-Item -Path "${File}.tmp" -ErrorAction SilentlyContinue
         exit 0
     }
-}
-else {
-    Write-Host "No changes made to $File" -ForegroundColor DarkGray
-    Remove-Item -Path "${File}.tmp" -ErrorAction SilentlyContinue
-    exit 0
 }
 
 Copy-Item -Path "${File}.tmp" -Destination "${File}"
