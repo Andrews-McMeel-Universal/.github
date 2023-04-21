@@ -5,13 +5,12 @@ param (
     [string]$Environment = "development"
 )
 
-#Check to see if Az module is installed
-if (!(Get-Module -ListAvailable Az)) {
-    Write-Host "Installing Azure Powershell Module."
-    Install-Module -Name Az -Confirm:$false
+# Check to see if Azure PowerShell Module is installed
+if (!(Get-Module -ListAvailable Az.KeyVault)) {
+    Write-Host "Installing Azure Powershell Module..."
+    Install-Module -Name Az.KeyVault -Confirm:$false
 }
 
-Import-Module Az -ErrorAction SilentlyContinue
 Clear-Content -Path $File -ErrorAction SilentlyContinue
 
 if (!"$KeyVaultName") {
@@ -19,21 +18,25 @@ if (!"$KeyVaultName") {
         Write-Host "Environment missing. Defaulting to development." -ForegroundColor DarkGray
     }
 
-    Write-Host "Searching for Key Vault..." -ForegroundColor DarkGray
+    Write-Host "Searching for key vault with tags: 'repository-name=$RepositoryName;environment=$Environment'" -ForegroundColor DarkGray
     $KeyVaultName = (Get-AzKeyVault -Tag @{"environment" = "$Environment" } | Get-AzKeyVault -Tag @{"repository-name" = "$RepositoryName" }).VaultName
-    Write-Host "Key Vault found: $KeyVaultName" -ForegroundColor DarkGray
+}
+else {
+    Write-Host "Searching for key vault named: $KeyVaultName" -ForegroundColor DarkGray
 }
 
 $Secrets = (Get-AzKeyVaultSecret -VaultName $KeyVaultName).Name
+
 if ($Secrets) {
-    Write-Host "Retrieving Secrets..." -ForegroundColor DarkGray
+    Write-Host "Key vault found: $KeyVaultName" -ForegroundColor DarkGray
+    Write-Host "Retrieving secrets..." -ForegroundColor DarkGray
 }
 $Secrets | ForEach-Object {
     $SecretName = $_.ToUpper().Replace("-", "_").Replace("`"", "")
     $SecretValue = (Get-AzKeyVaultSecret -VaultName $KeyVaultName -Name $_).SecretValue | ConvertFrom-SecureString -AsPlainText
     $Secret = $SecretName + "=" + $SecretValue
+    Write-Host "$Secret"
     Add-Content -Path $File -Value $Secret
 }
 
-Write-Host "Environment file $File generated.  Content is:" -ForegroundColor Green
-Get-Content $File
+Write-Host "✨ .env file generated from $KeyVaultName" -ForegroundColor Green

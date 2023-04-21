@@ -4,16 +4,15 @@ param (
     [string]$SetFile = 'Set-Secrets.ps1'
 )
 
-#Check to see if Az module is installed
-if (!(Get-Module -ListAvailable Az)) {
-    Write-Host "Installing Azure Powershell Module." -ForegroundColor DarkGray
-    Install-Module -Name Az -Confirm:$false
+# Check to see if Azure PowerShell Module is installed
+if (!(Get-Module -ListAvailable Az.KeyVault)) {
+    Write-Host "Installing Azure Powershell Module..."
+    Install-Module -Name Az.KeyVault -Confirm:$false
 }
-Import-Module Az -ErrorAction SilentlyContinue
 
 Clear-Content -Path "${File}.tmp" -ErrorAction SilentlyContinue
 
-Write-Host "Searching for key vaults with tag: @{'repository-name'='$RepositoryName'}" -ForegroundColor DarkGray
+Write-Host "Searching for key vaults with tag: 'repository-name=$RepositoryName'" -ForegroundColor DarkGray
 $KeyVaultNames = (Get-AzKeyVault -Tag @{"repository-name" = "$RepositoryName" }).VaultName
 
 if ($KeyVaultNames) {
@@ -26,7 +25,7 @@ else {
 $KeyVaults = New-Object PSCustomObject
 $KeyVaultNames | ForEach-Object {
     $KeyVaultName = $_
-    Write-Host "Generating secrets for $KeyVaultName" -ForegroundColor DarkGray
+    Write-Host "Generating secrets for $KeyVaultName..." -ForegroundColor DarkGray
     $KeyVault = @()
     $Secrets = (Get-AzKeyVaultSecret -VaultName $_).Name
     $Secrets | ForEach-Object {
@@ -64,7 +63,7 @@ if (Test-Path "${File}") {
 
 Copy-Item -Path "${File}.tmp" -Destination "${File}"
 
-Write-Host "$File file generated" -ForegroundColor Green
-Write-Host "Once you've finished editing $File, please update this project's Azure Key Vaults by running '$SetFile'" -ForegroundColor Green
+Write-Host "✨ $File file generated" -ForegroundColor Green
+Write-Host "Once you've finished editing $File, please update this project's Azure Key Vaults by running '$SetFile'" -ForegroundColor Yellow
 
 Remove-Item -Path "${File}.tmp" -ErrorAction SilentlyContinue

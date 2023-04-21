@@ -5,13 +5,11 @@ param (
     $File = "Secrets.json"
 )
 
-#Check to see if Az module is installed
-if (!(Get-Module -ListAvailable Az)) {
-    Write-Host "Installing Azure Powershell Module."
-    Install-Module -Name Az -Confirm:$false -Force
+# Check to see if Azure PowerShell Module is installed
+if (!(Get-Module -ListAvailable Az.KeyVault)) {
+    Write-Host "Installing Azure Powershell Module..."
+    Install-Module -Name Az.KeyVault -Confirm:$false
 }
-
-Import-Module Az -ErrorAction SilentlyContinue
 
 $RepositoryName = ((git remote get-url origin).Split("/")[-1].Replace(".git",""))
 
