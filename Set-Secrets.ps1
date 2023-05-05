@@ -1,8 +1,10 @@
 param (
-    [parameter(Mandatory = $false)]
-    $KeyVaultRG = "AMU_KeyVaults_RG",
-    [parameter(Mandatory = $false)]
-    $File = "Secrets.json"
+    [string]$TenantName = "Andrews McMeel Universal",
+    [string]$SubscriptionName = "AMU Pay-as-you-go",
+    [string]$KeyVaultRG = "AMU_KeyVaults_RG",
+    [string]$File = "Secrets.json",
+    [string]$KeyVaultName = ".*",
+    [string]$SecretName = ".*"
 )
 
 # Check to see if Azure PowerShell Module is installed
@@ -11,39 +13,57 @@ if (!(Get-Module -ListAvailable Az.KeyVault)) {
     Install-Module -Name Az.KeyVault -Confirm:$false
 }
 
+# Switch to the AMU Subscription and Tenant
+Write-Host "Setting AzContext to 'TenantName=$TenantName;SubscriptionName=$SubscriptionName'" -ForegroundColor DarkGray
+$Subscription = Set-AzContext -SubscriptionName $SubscriptionName -Tenant (Get-AzTenant | Where-Object Name -match "Andrews McMeel Universal").Id
+
+# Get repository name from git origin url
 $RepositoryName = ((git remote get-url origin).Split("/")[-1].Replace(".git",""))
 
-$keyVaults = (Get-Content -Path $File | ConvertFrom-Json).PSObject.Properties
-$keyVaults | ForEach-Object {
+# Filter by $KeyVaultName argument
+$KeyVaults = (Get-Content -Path $File | ConvertFrom-Json).PSObject.Properties | Where-Object Name -imatch $KeyVaultName
+
+# Loop through setting secrets for each key vault
+$KeyVaults | ForEach-Object {
     $KeyVaultName = $_.Name
+    # Get Environment from key vault name
     $Environment = $KeyVaultName.Split('-')[-1]
-    $KeyVault = New-AzKeyVault -Name $KeyVaultName -ResourceGroupName "$KeyVaultRG" -Sku Standard -EnableRbacAuthorization -Location 'Central US' -Tag @{"environment"="$Environment";"repository-name"="$RepositoryName"} -ErrorAction SilentlyContinue
-    if (!$KeyVault) {
-        $KeyVault = Get-AzKeyVault -VaultName $KeyVaultName
+    $KeyVault = Get-AzKeyVault -VaultName $KeyVaultName
+    if ($KeyVault) {
+        # Only set tags if they aren't set correctly
         if ((! $KeyVault.Tags.environment -eq "$Environment") -or (! $KeyVault.Tags."repository-name" -eq "$RepositoryName")) {
             $KeyVault = $KeyVault | Update-AzKeyVault -Tags @{"environment"="$Environment";"repository-name"="$RepositoryName"}
-            Write-Host "Updated tags on $KeyVaultName" -ForegroundColor Green
+            Write-Host "[$KeyVaultName] Property updated: key vault tags" -ForegroundColor Green
         }
         else {
-            Write-Host "No changes to $KeyVaultName" -ForegroundColor DarkGray
+            Write-Host "[$KeyVaultName] Property not updated: key vault tags" -ForegroundColor DarkGray
         }
     }
     else {
-        Write-Host "Created $KeyVaultName" -ForegroundColor Green
+        # Create key vault with proper tags
+        $KeyVault = New-AzKeyVault -Name $KeyVaultName -ResourceGroupName "$KeyVaultRG" -Sku Standard -EnableRbacAuthorization -Location 'Central US' -Tag @{"environment"="$Environment";"repository-name"="$RepositoryName"} -ErrorAction SilentlyContinue
     }
-    $secrets = $_.Value
-    $secrets | ForEach-Object {
-        $SecretName = $_.SecretName.ToLower().Replace("_", "-")
+
+    # Filter by $SecretName argument
+    $Secrets = $_.Value | Where-Object SecretName -imatch $SecretName
+
+    $Secrets | ForEach-Object {
+        # Set variables for secret object
+        $SecretNameLower = $_.SecretName.ToLower().Replace("_", "-")
         $SecretValue = $_.SecretValue
         $ContentType = $_.ContentType
-        $CurrentContentType = (Get-AzKeyVaultSecret -VaultName $KeyVaultName -SecretName "$SecretName").ContentType   
-        $CurrentValue = (Get-AzKeyVaultSecret -VaultName $KeyVaultName -SecretName "$SecretName" -AsPlainText)
+
+        # Get current ContentType and Value to compare
+        $CurrentContentType = (Get-AzKeyVaultSecret -VaultName $KeyVaultName -SecretName "$SecretNameLower").ContentType   
+        $CurrentValue = (Get-AzKeyVaultSecret -VaultName $KeyVaultName -SecretName "$SecretNameLower" -AsPlainText)
+
+        # If value or ContentType is different, update the secret
         if (($CurrentValue -ne $SecretValue) -or ($CurrentContentType -ne $ContentType)){
-            $Secret = Set-AzKeyVaultSecret -VaultName $KeyVaultName -SecretName "$SecretName" -SecretValue ("$SecretValue" | ConvertTo-SecureString -AsPlainText -Force) -ContentType "$ContentType"
-            Write-Host "[$KeyVaultName] Updated $($_.SecretName)" -ForegroundColor Green
+            $Secret = Set-AzKeyVaultSecret -VaultName $KeyVaultName -SecretName "$SecretNameLower" -SecretValue ("$SecretValue" | ConvertTo-SecureString -AsPlainText -Force) -ContentType "$ContentType"
+            Write-Host "[$KeyVaultName] Secret updated: $($_.SecretName)" -ForegroundColor Green
         }
         else {
-            Write-Host "[$KeyVaultName] No changes to $($_.SecretName)" -ForegroundColor DarkGray
+            Write-Host "[$KeyVaultName] Secret not updated: $($_.SecretName)" -ForegroundColor DarkGray
         }
     }
 }
