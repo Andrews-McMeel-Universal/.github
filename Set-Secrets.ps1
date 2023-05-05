@@ -42,6 +42,7 @@ $KeyVaults | ForEach-Object {
     else {
         # Create key vault with proper tags
         $KeyVault = New-AzKeyVault -Name $KeyVaultName -ResourceGroupName "$KeyVaultRG" -Sku Standard -EnableRbacAuthorization -Location 'Central US' -Tag @{"environment"="$Environment";"repository-name"="$RepositoryName"} -ErrorAction SilentlyContinue
+        Write-Host "[$KeyVaultName] Created Azure Key Vault with correct tags" -ForegroundColor Green
     }
 
     # Filter by $SecretName argument
