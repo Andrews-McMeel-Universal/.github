@@ -1,5 +1,6 @@
 param (
     [string]$TenantName = "Andrews McMeel Universal",
+    [string]$SubscriptionName = "AMU Pay-as-you-go",
     [string]$KeyVaultName,
     [string]$File = '.env',
     [string]$RepositoryName = ((git remote get-url origin).Split("/")[-1].Replace(".git","")),
@@ -12,13 +13,9 @@ if (!(Get-Module -ListAvailable Az.KeyVault)) {
     Install-Module -Name Az.KeyVault -Confirm:$false
 }
 
-# Switch to AMU Tenant
-Get-AzTenant | ForEach-Object {
-    # Search for tenant ID that has a name matching $TenantName
-    if ($_.Name | Select-String $TenantName) {
-        $TenantId = Set-AzContext -TenantId $_.Id
-    }
-}
+# Switch to the AMU Subscription and Tenant
+Write-Host "Setting AzContext to 'TenantName=$TenantName;SubscriptionName=$SubscriptionName'" -ForegroundColor DarkGray
+$Subscription = Set-AzContext -SubscriptionName $SubscriptionName -Tenant (Get-AzTenant | Where-Object Name -match "Andrews McMeel Universal").Id
 
 Clear-Content -Path "${File}.tmp" -ErrorAction SilentlyContinue
 
@@ -51,4 +48,6 @@ $Secrets | ForEach-Object {
 }
 
 Copy-Item -Path "${File}.tmp" -Destination "${File}"
+Remove-Item -Path "${File}.tmp"-Force -ErrorAction SilentlyContinue
+
 Write-Host "✨ .env file generated from $KeyVaultName" -ForegroundColor Green

@@ -1,5 +1,6 @@
 param (
     [string]$TenantName = "Andrews McMeel Universal",
+    [string]$SubscriptionName = "AMU Pay-as-you-go",
     [string]$KeyVaultRG = "AMU_KeyVaults_RG",
     [string]$File = "Secrets.json",
     [string]$KeyVaultName = ".*",
@@ -12,13 +13,9 @@ if (!(Get-Module -ListAvailable Az.KeyVault)) {
     Install-Module -Name Az.KeyVault -Confirm:$false
 }
 
-# Switch to AMU Tenant
-Get-AzTenant | ForEach-Object {
-    # Search for tenant ID that has a name matching $TenantName
-    if ($_.Name | Select-String $TenantName) {
-        $TenantId = Set-AzContext -TenantId $_.Id
-    }
-}
+# Switch to the AMU Subscription and Tenant
+Write-Host "Setting AzContext to 'TenantName=$TenantName;SubscriptionName=$SubscriptionName'" -ForegroundColor DarkGray
+$Subscription = Set-AzContext -SubscriptionName $SubscriptionName -Tenant (Get-AzTenant | Where-Object Name -match "Andrews McMeel Universal").Id
 
 # Get repository name from git origin url
 $RepositoryName = ((git remote get-url origin).Split("/")[-1].Replace(".git",""))

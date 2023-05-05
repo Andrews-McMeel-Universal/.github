@@ -1,5 +1,6 @@
 param (
     [string]$TenantName = "Andrews McMeel Universal",
+    [string]$SubscriptionName = "AMU Pay-as-you-go",
     [string]$File = 'Secrets.json',
     [string]$RepositoryName = (git remote get-url origin).Split("/")[-1].Replace(".git",""),
     [string]$SetFile = 'Set-Secrets.ps1',
@@ -15,13 +16,9 @@ if (!(Get-Module -ListAvailable Az.KeyVault)) {
     Install-Module -Name Az.KeyVault -Confirm:$false
 }
 
-# Switch to AMU Tenant
-Get-AzTenant | ForEach-Object {
-    # Search for tenant ID that has a name matching $TenantName
-    if ($_.Name | Select-String $TenantName) {
-        $TenantId = Set-AzContext -TenantId $_.Id
-    }
-}
+# Switch to the AMU Subscription and Tenant
+Write-Host "Setting AzContext to 'TenantName=$TenantName;SubscriptionName=$SubscriptionName'" -ForegroundColor DarkGray
+$Subscription = Set-AzContext -SubscriptionName $SubscriptionName -Tenant (Get-AzTenant | Where-Object Name -match "Andrews McMeel Universal").Id
 
 # Don't clear the ${File}.tmp file if using the VersionHistory option
 if (!$VersionHistory) {
@@ -134,7 +131,7 @@ if (Test-Path "${File}") {
     # Compare current and working files
     if (((Get-FileHash "${File}.tmp").Hash) -ne ((Get-FileHash "${File}").Hash)) {
         # Ask user if they want to overwrite their existing ${File}
-        $choice = $(Write-Host "The local copy of $File does not match what is currently in the Azure Key Vaults. Do you still want to overwrite it? (Y/N)" -ForegroundColor Yellow; Read-Host)
+        $choice = $(Write-Host "File '$File' exists. Overwrite? (y/N)" -ForegroundColor Yellow; Read-Host)
         if ($choice.ToUpper() -eq "N") {
             Write-Host "No changes made to $File" -ForegroundColor DarkGray
             Remove-Item -Path "${File}.tmp" -ErrorAction SilentlyContinue
@@ -143,7 +140,7 @@ if (Test-Path "${File}") {
         }
     }
     else {
-        Write-Host "No changes made to $File" -ForegroundColor DarkGray
+        Write-Host "No changes made to file '$File'" -ForegroundColor DarkGray
         Remove-Item -Path "${File}.tmp" -ErrorAction SilentlyContinue
         # Exit out if the hashes are the same
         exit 0
@@ -153,5 +150,5 @@ if (Test-Path "${File}") {
 Copy-Item -Path "${File}.tmp" -Destination "${File}"
 Remove-Item -Path "${File}.tmp" -ErrorAction SilentlyContinue
 
-Write-Host "✨ $File file generated" -ForegroundColor Green
+Write-Host "✨ File '$File' generated" -ForegroundColor Green
 Write-Host "Once you've finished editing $File, please update this project's Azure Key Vaults by running '$SetFile'" -ForegroundColor Yellow
