@@ -42,6 +42,9 @@ github_conf/*
 # ssh
 id_rsa
 
+# azure-content-management_tool ignore
+**/azcm_db_config.psd1
+
 ###################
 
 # Rails
