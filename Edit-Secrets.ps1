@@ -2,7 +2,7 @@ param (
     [string]$TenantName = "Andrews McMeel Universal",
     [string]$SubscriptionName = "AMU Pay-as-you-go",
     [string]$File = 'Secrets.json',
-    [string]$RepositoryName = (git remote get-url origin).Split("/")[-1].Replace(".git",""),
+    [string]$RepositoryName = (git remote get-url origin).Split("/")[-1].Replace(".git", ""),
     [string]$SetFile = 'Set-Secrets.ps1',
     [string]$KeyVaultName,
     [string]$SecretName,
@@ -16,9 +16,22 @@ if (!(Get-Module -ListAvailable Az.KeyVault)) {
     Install-Module -Name Az.KeyVault -Confirm:$false
 }
 
-# Switch to the AMU Subscription and Tenant
-Write-Host "Setting AzContext to 'TenantName=$TenantName;SubscriptionName=$SubscriptionName'" -ForegroundColor DarkGray
-$Subscription = Set-AzContext -SubscriptionName $SubscriptionName -Tenant (Get-AzTenant | Where-Object Name -match "Andrews McMeel Universal").Id
+# Check if user needs to log in
+if (!(Get-AzContext)) {
+    Write-Host "Cannot retrieve AzContext. Running 'Connect-AzAccount'" -ForegroundColor DarkGray
+    [void](Connect-AzAccount -Subscription $SubscriptionName -Force)
+}
+
+# Check if tenant is available
+$Tenant = Get-AzTenant -ErrorAction SilentlyContinue | Where-Object Name -match "$TenantName"
+if (!$Tenant) {
+    Write-Error "Cannot retrieve '$TenantName' tenant. Please try logging in with 'Connect-AzAccount'"
+    return
+}
+
+# Switch to the correct subscription and tenant
+[void](Set-AzContext -SubscriptionName $SubscriptionName -Tenant $Tenant.Id)
+Write-Host "AzContext set to 'TenantName=$TenantName' and 'SubscriptionName=$SubscriptionName'" -ForegroundColor DarkGray
 
 # Don't clear the ${File}.tmp file if using the VersionHistory option
 if (!$VersionHistory) {
@@ -79,9 +92,9 @@ $KeyVaultNames | ForEach-Object {
 
                 # Set $Updated to [datetime] type to fix AM/PM indicator
                 $VersionHash = @{
-                    "Version" = "$Version"
+                    "Version"     = "$Version"
                     "SecretValue" = "$SecretValue"
-                    "Updated" = [datetime]"$Updated"
+                    "Updated"     = [datetime]"$Updated"
                 }    
 
                 # Append to version history hash table
@@ -92,9 +105,9 @@ $KeyVaultNames | ForEach-Object {
 
             # Format hash table
             $VersionHistoryHash | 
-                Sort-Object -Property Updated -Descending -Top $VersionHistoryLength |
-                Select-Object -Property Updated,SecretValue |
-                Format-Table -AutoSize
+            Sort-Object -Property Updated -Descending -Top $VersionHistoryLength |
+            Select-Object -Property Updated, SecretValue |
+            Format-Table -AutoSize
             
             # Continue 
             return
@@ -106,7 +119,7 @@ $KeyVaultNames | ForEach-Object {
 
             # Create secret hash
             $SecretHash = @{
-                "SecretName" = "$SecretName"
+                "SecretName"  = "$SecretName"
                 "SecretValue" = "$SecretValue"
                 "ContentType" = "$ContentType"
             }

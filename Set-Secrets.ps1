@@ -13,12 +13,25 @@ if (!(Get-Module -ListAvailable Az.KeyVault)) {
     Install-Module -Name Az.KeyVault -Confirm:$false
 }
 
-# Switch to the AMU Subscription and Tenant
-Write-Host "Setting AzContext to 'TenantName=$TenantName;SubscriptionName=$SubscriptionName'" -ForegroundColor DarkGray
-$Subscription = Set-AzContext -SubscriptionName $SubscriptionName -Tenant (Get-AzTenant | Where-Object Name -match "Andrews McMeel Universal").Id
+# Check if user needs to log in
+if (!(Get-AzContext)) {
+    Write-Host "Cannot retrieve AzContext. Running 'Connect-AzAccount'" -ForegroundColor DarkGray
+    [void](Connect-AzAccount -Subscription $SubscriptionName -Force)
+}
+
+# Check if tenant is available
+$Tenant = Get-AzTenant -ErrorAction SilentlyContinue | Where-Object Name -match "$TenantName"
+if (!$Tenant) {
+    Write-Error "Cannot retrieve '$TenantName' tenant. Please try logging in with 'Connect-AzAccount'"
+    return
+}
+
+# Switch to the correct subscription and tenant
+[void](Set-AzContext -SubscriptionName $SubscriptionName -Tenant $Tenant.Id)
+Write-Host "AzContext set to 'TenantName=$TenantName' and 'SubscriptionName=$SubscriptionName'" -ForegroundColor DarkGray
 
 # Get repository name from git origin url
-$RepositoryName = ((git remote get-url origin).Split("/")[-1].Replace(".git",""))
+$RepositoryName = ((git remote get-url origin).Split("/")[-1].Replace(".git", ""))
 
 # Filter by $KeyVaultName argument
 $KeyVaults = (Get-Content -Path $File | ConvertFrom-Json).PSObject.Properties | Where-Object Name -imatch $KeyVaultName
@@ -32,7 +45,7 @@ $KeyVaults | ForEach-Object {
     if ($KeyVault) {
         # Only set tags if they aren't set correctly
         if ((! $KeyVault.Tags.environment -eq "$Environment") -or (! $KeyVault.Tags."repository-name" -eq "$RepositoryName")) {
-            $KeyVault = $KeyVault | Update-AzKeyVault -Tags @{"environment"="$Environment";"repository-name"="$RepositoryName"}
+            $KeyVault = $KeyVault | Update-AzKeyVault -Tags @{"environment" = "$Environment"; "repository-name" = "$RepositoryName" }
             Write-Host "[$KeyVaultName] Property updated: key vault tags" -ForegroundColor Green
         }
         else {
@@ -41,7 +54,7 @@ $KeyVaults | ForEach-Object {
     }
     else {
         # Create key vault with proper tags
-        $KeyVault = New-AzKeyVault -Name $KeyVaultName -ResourceGroupName "$KeyVaultRG" -Sku Standard -EnableRbacAuthorization -Location 'Central US' -Tag @{"environment"="$Environment";"repository-name"="$RepositoryName"} -ErrorAction SilentlyContinue
+        $KeyVault = New-AzKeyVault -Name $KeyVaultName -ResourceGroupName "$KeyVaultRG" -Sku Standard -EnableRbacAuthorization -Location 'Central US' -Tag @{"environment" = "$Environment"; "repository-name" = "$RepositoryName" } -ErrorAction SilentlyContinue
         Write-Host "[$KeyVaultName] Created Azure Key Vault with correct tags" -ForegroundColor Green
     }
 
@@ -59,7 +72,7 @@ $KeyVaults | ForEach-Object {
         $CurrentValue = (Get-AzKeyVaultSecret -VaultName $KeyVaultName -SecretName "$SecretNameLower" -AsPlainText)
 
         # If value or ContentType is different, update the secret
-        if (($CurrentValue -ne $SecretValue) -or ($CurrentContentType -ne $ContentType)){
+        if (($CurrentValue -ne $SecretValue) -or ($CurrentContentType -ne $ContentType)) {
             $Secret = Set-AzKeyVaultSecret -VaultName $KeyVaultName -SecretName "$SecretNameLower" -SecretValue ("$SecretValue" | ConvertTo-SecureString -AsPlainText -Force) -ContentType "$ContentType"
             Write-Host "[$KeyVaultName] Secret updated: $($_.SecretName)" -ForegroundColor Green
         }

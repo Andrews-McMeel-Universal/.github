@@ -3,7 +3,7 @@ param (
     [string]$SubscriptionName = "AMU Pay-as-you-go",
     [string]$KeyVaultName,
     [string]$File = '.env',
-    [string]$RepositoryName = ((git remote get-url origin).Split("/")[-1].Replace(".git","")),
+    [string]$RepositoryName = ((git remote get-url origin).Split("/")[-1].Replace(".git", "")),
     [string]$Environment = "development"
 )
 
@@ -13,16 +13,22 @@ if (!(Get-Module -ListAvailable Az.KeyVault)) {
     Install-Module -Name Az.KeyVault -Confirm:$false
 }
 
+# Check if user needs to log in
+if (!(Get-AzContext)) {
+    Write-Host "Cannot retrieve AzContext. Running 'Connect-AzAccount'" -ForegroundColor DarkGray
+    [void](Connect-AzAccount -Subscription $SubscriptionName -Force)
+}
+
 # Check if tenant is available
 $Tenant = Get-AzTenant -ErrorAction SilentlyContinue | Where-Object Name -match "$TenantName"
 if (!$Tenant) {
-    Write-Error "Cannot find '$TenantName' tenant. Please try logging in with 'Connect-AzAccount'"
+    Write-Error "Cannot retrieve '$TenantName' tenant. Please try logging in with 'Connect-AzAccount'"
     return
 }
 
 # Switch to the correct subscription and tenant
-$Subscription = Set-AzContext -SubscriptionName $SubscriptionName -Tenant $Tenant.Id
-Write-Host "AzContext set to 'TenantName=$TenantName;SubscriptionName=$SubscriptionName'" -ForegroundColor DarkGray
+[void](Set-AzContext -SubscriptionName $SubscriptionName -Tenant $Tenant.Id)
+Write-Host "AzContext set to 'TenantName=$TenantName' and 'SubscriptionName=$SubscriptionName'" -ForegroundColor DarkGray
 
 # Clear temporary file
 Clear-Content -Path "${File}.tmp" -ErrorAction SilentlyContinue
@@ -75,7 +81,7 @@ $Secrets | ForEach-Object {
     $SecretValue = (Get-AzKeyVaultSecret -VaultName "$KeyVaultName" -Name $_).SecretValue | ConvertFrom-SecureString -AsPlainText
 
     # Add secret to hash
-    $SecretHash += [pscustomobject]@{SecretName = $SecretName; SecretValue = $SecretValue}
+    $SecretHash += [pscustomobject]@{SecretName = $SecretName; SecretValue = $SecretValue }
 
     # Add secret to temporary file
     Add-Content -Path "${File}.tmp" -Value "$SecretName=$SecretValue"
