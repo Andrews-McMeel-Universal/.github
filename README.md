@@ -6,7 +6,7 @@ Default files for repositories in the @Andrews-McMeel-Universal organization.
 
 The environment variables for this project are sourced from Azure Key Vault Secrets. The `.env` file is what is read for local development.
 
-### Retrieving Secrets
+### Retrieving Environment Variables
 
 You have options when generating a local `.env` file:
 
@@ -26,5 +26,3 @@ appname-development
 appname-staging
 appname-production
 ```
-
----
