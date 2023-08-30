@@ -65,7 +65,7 @@ $KeyVaultNames | ForEach-Object {
 
     # Set Secrets object depending on $SecretName argument
     if ($PSBoundParameters.ContainsKey('SecretName')) {
-        $Secrets = $SecretName.ToLower().Replace("_", "-")
+        $Secrets = $SecretName.ToLower().Replace('_', '-')
     }
     else {
         $Secrets = (Get-AzKeyVaultSecret -VaultName $_).Name
@@ -73,7 +73,7 @@ $KeyVaultNames | ForEach-Object {
 
     # Loop through Secrets objects
     $Secrets | ForEach-Object {
-        $SecretName = $_.ToUpper().Replace("-", "_").Replace("`"", "")
+        $SecretName = $_.ToUpper().Replace('-', '_').Replace('`"', '')
 
         if ($VersionHistory) {
             # Create version history hash table
@@ -95,7 +95,7 @@ $KeyVaultNames | ForEach-Object {
                     "Version"     = "$Version"
                     "SecretValue" = "$SecretValue"
                     "Updated"     = [datetime]"$Updated"
-                }    
+                }
 
                 # Append to version history hash table
                 $VersionHistoryHash += $VersionHash
@@ -104,18 +104,18 @@ $KeyVaultNames | ForEach-Object {
             Write-Host "[$KeyVaultName] Versions for ${SecretName}:" -ForegroundColor Green
 
             # Format hash table
-            $VersionHistoryHash | 
+            $VersionHistoryHash |
             Sort-Object -Property Updated -Descending -Top $VersionHistoryLength |
             Select-Object -Property Updated, SecretValue |
             Format-Table -AutoSize
-            
-            # Continue 
+
+            # Continue
             return
         }
         else {
             # Set secret properties
             $SecretValue = Get-AzKeyVaultSecret -VaultName $KeyVaultName -Name $_ -AsPlainText
-            $ContentType = (Get-AzKeyVaultSecret -VaultName $KeyVaultName -Name $_).ContentType  
+            $ContentType = (Get-AzKeyVaultSecret -VaultName $KeyVaultName -Name $_).ContentType
 
             # Create secret hash
             $SecretHash = @{
