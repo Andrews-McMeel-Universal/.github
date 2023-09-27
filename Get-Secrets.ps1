@@ -20,7 +20,7 @@ if (!(Get-AzContext)) {
 }
 
 # Check if tenant is available
-$Tenant = Get-AzTenant -ErrorAction SilentlyContinue | Where-Object Name -match "$TenantName"
+$Tenant = Get-AzTenant -ErrorAction SilentlyContinue | Where-Object Name -Match "$TenantName"
 if (!$Tenant) {
     Write-Error "Cannot retrieve '$TenantName' tenant. Please try logging in with 'Connect-AzAccount'"
     return
@@ -65,7 +65,7 @@ if (!$KeyVault) {
 }
 Write-Host "Key vault found: $KeyVaultName" -ForegroundColor DarkGray
 
-# Set secrets list 
+# Set secrets list
 $Secrets = (Get-AzKeyVaultSecret -VaultName "$KeyVaultName").Name
 
 # Create secret hash
@@ -74,11 +74,17 @@ $SecretHash = @()
 # Loop through secrets and add them to ${File}.tmp
 Write-Host "Retrieving secrets..." -ForegroundColor DarkGray
 $Secrets | ForEach-Object {
-    # Convert to upper case snake case and remove quotes
+    # Set secret object
+    $Secret = (Get-AzKeyVaultSecret -VaultName "$KeyVaultName" -Name $_)
+
+    # Convert secret name to upper case snake case and remove quotes
     $SecretName = $_.ToUpper().Replace("-", "_").Replace("`"", "")
 
-    # Get secret value and set it to the secret name
-    $SecretValue = (Get-AzKeyVaultSecret -VaultName "$KeyVaultName" -Name $_).SecretValue | ConvertFrom-SecureString -AsPlainText
+    # Get secret value
+    $SecretValue = $Secret.SecretValue | ConvertFrom-SecureString -AsPlainText
+
+    # Get content type
+    $SecretContentType = $Secret.ContentType
 
     # Add secret to hash
     $SecretHash += [pscustomobject]@{SecretName = $SecretName; SecretValue = $SecretValue }
