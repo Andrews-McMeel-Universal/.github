@@ -8,7 +8,8 @@
 **/*.{css,woff*,ttf,ico,tsx}    @Andrews-McMeel-Universal/front-end-engineers
 .{npm,nvm}rc                    @Andrews-McMeel-Universal/front-end-engineers
 {yarn,Gemfile}.lock             @Andrews-McMeel-Universal/front-end-engineers
-{Gemfile,package*.json}         @Andrews-McMeel-Universal/front-end-engineers
+Gemfile                         @Andrews-McMeel-Universal/front-end-engineers
+package*.json                   @Andrews-McMeel-Universal/front-end-engineers
 public/                         @Andrews-McMeel-Universal/front-end-engineers
 src/                            @Andrews-McMeel-Universal/front-end-engineers
 .storybook/                     @Andrews-McMeel-Universal/front-end-engineers
