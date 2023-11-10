@@ -1,24 +1,24 @@
 # General
-*                               @Andrews-McMeel-Universal/front-end-engineers-puzzle-society
+*                               @Andrews-McMeel-Universal/devops-engineers
 
 # Front-end Engineering
-**/*.{html,lock,js,jsx,ts}      @Andrews-McMeel-Universal/front-end-engineers-puzzle-society
-**/*.{less,scss,sass,otf,eot}   @Andrews-McMeel-Universal/front-end-engineers-puzzle-society
-**/*.{svg,jpg,jpeg,gif,png}     @Andrews-McMeel-Universal/front-end-engineers-puzzle-society
-**/*.{css,woff*,ttf,ico,tsx}    @Andrews-McMeel-Universal/front-end-engineers-puzzle-society
-.{npm,nvm}rc                    @Andrews-McMeel-Universal/front-end-engineers-puzzle-society
-{yarn,Gemfile}.lock             @Andrews-McMeel-Universal/front-end-engineers-puzzle-society
-{Gemfile,package*.json}         @Andrews-McMeel-Universal/front-end-engineers-puzzle-society
-public/                         @Andrews-McMeel-Universal/front-end-engineers-puzzle-society
-src/                            @Andrews-McMeel-Universal/front-end-engineers-puzzle-society
-.storybook/                     @Andrews-McMeel-Universal/front-end-engineers-puzzle-society
-wp-content/                     @Andrews-McMeel-Universal/front-end-engineers-puzzle-society
-.browserslistrc                 @Andrews-McMeel-Universal/front-end-engineers-puzzle-society
-**eslint**                      @Andrews-McMeel-Universal/front-end-engineers-puzzle-society
-**jest**                        @Andrews-McMeel-Universal/front-end-engineers-puzzle-society
-**prettier**                    @Andrews-McMeel-Universal/front-end-engineers-puzzle-society
-**stylelint**                   @Andrews-McMeel-Universal/front-end-engineers-puzzle-society
-src/{src,amu,assets}/**         @Andrews-McMeel-Universal/front-end-engineers-puzzle-society
+**/*.{html,lock,js,jsx,ts}      @Andrews-McMeel-Universal/front-end-engineers
+**/*.{less,scss,sass,otf,eot}   @Andrews-McMeel-Universal/front-end-engineers
+**/*.{svg,jpg,jpeg,gif,png}     @Andrews-McMeel-Universal/front-end-engineers
+**/*.{css,woff*,ttf,ico,tsx}    @Andrews-McMeel-Universal/front-end-engineers
+.{npm,nvm}rc                    @Andrews-McMeel-Universal/front-end-engineers
+{yarn,Gemfile}.lock             @Andrews-McMeel-Universal/front-end-engineers
+{Gemfile,package*.json}         @Andrews-McMeel-Universal/front-end-engineers
+public/                         @Andrews-McMeel-Universal/front-end-engineers
+src/                            @Andrews-McMeel-Universal/front-end-engineers
+.storybook/                     @Andrews-McMeel-Universal/front-end-engineers
+wp-content/                     @Andrews-McMeel-Universal/front-end-engineers
+.browserslistrc                 @Andrews-McMeel-Universal/front-end-engineers
+**eslint**                      @Andrews-McMeel-Universal/front-end-engineers
+**jest**                        @Andrews-McMeel-Universal/front-end-engineers
+**prettier**                    @Andrews-McMeel-Universal/front-end-engineers
+**stylelint**                   @Andrews-McMeel-Universal/front-end-engineers
+src/{src,amu,assets}/**         @Andrews-McMeel-Universal/front-end-engineers
 
 # Back-end Engineering
 *.{cs,csproj,sln,rb,ru}         @Andrews-McMeel-Universal/back-end-engineers
