@@ -7,7 +7,8 @@ param (
     [string]$KeyVaultName,
     [string]$SecretName,
     [switch]$VersionHistory = $false,
-    [int]$VersionHistoryLength = 10
+    [int]$VersionHistoryLength = 10,
+    [switch]$Force
 )
 
 # Check to see if Azure PowerShell Module is installed
@@ -140,7 +141,7 @@ if ($VersionHistory) {
 Add-Content -Path "${File}.tmp" -Value ($KeyVaults | ConvertTo-Json)
 
 # Check if ${File} already exists before proceeding
-if (Test-Path "${File}") {
+if ((Test-Path "${File}") -and (! $Force)) {
     # Compare current and working files
     if (((Get-FileHash "${File}.tmp").Hash) -ne ((Get-FileHash "${File}").Hash)) {
         # Ask user if they want to overwrite their existing ${File}
