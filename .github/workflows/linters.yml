@@ -26,5 +26,6 @@ jobs:
     uses: Andrews-McMeel-Universal/reusable_workflows/.github/workflows/simple-lint.yaml@2
     with:
       runPrettier: ${{ vars.SIMPLE_LINT_RUN_PRETTIER != 'false' }}
+      prettierPlugins: ${{ vars.INSTALL_PRETTIER_PLUGINS }}
     secrets:
       PAT_ACTION_CI: ${{ secrets.PAT_ACTION_CI }}
