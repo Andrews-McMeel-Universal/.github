@@ -333,20 +333,20 @@ atlassian-ide-plugin.xml
 mono_crash.*
 
 # Build results
-*Service.*/[Dd]ebug/
-*Service.*/[Dd]ebugPublic/
-*Service.*/[Rr]elease/
-*Service.*/[Rr]eleases/
-*Service.*/x64/
-*Service.*/x86/
-*Service.*/[Ww][Ii][Nn]32/
-*Service.*/[Aa][Rr][Mm]/
-*Service.*/[Aa][Rr][Mm]64/
-*Service.*/bld/
-*Service.*/[Oo]bj/
-*Service.*/[Ll]og/
-*Service.*/[Ll]ogs/
-*Service.*/bin/
+*Service*/[Dd]ebug/
+*Service*/[Dd]ebugPublic/
+*Service*/[Rr]elease/
+*Service*/[Rr]eleases/
+*Service*/x64/
+*Service*/x86/
+*Service*/[Ww][Ii][Nn]32/
+*Service*/[Aa][Rr][Mm]/
+*Service*/[Aa][Rr][Mm]64/
+*Service*/bld/
+*Service*/[Oo]bj/
+*Service*/[Ll]og/
+*Service*/[Ll]ogs/
+*Service*/bin/
 *Function*/[Dd]ebug/
 *Function*/[Dd]ebugPublic/
 *Function*/[Rr]elease/
