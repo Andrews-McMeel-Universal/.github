@@ -375,6 +375,34 @@ mono_crash.*
 *.Models/[Ll]og/
 *.Models/[Ll]ogs/
 *.Models/bin/
+*.Library/[Dd]ebug/
+*.Library/[Dd]ebugPublic/
+*.Library/[Rr]elease/
+*.Library/[Rr]eleases/
+*.Library/x64/
+*.Library/x86/
+*.Library/[Ww][Ii][Nn]32/
+*.Library/[Aa][Rr][Mm]/
+*.Library/[Aa][Rr][Mm]64/
+*.Library/bld/
+*.Library/[Oo]bj/
+*.Library/[Ll]og/
+*.Library/[Ll]ogs/
+*.Library/bin/
+*.Tests/[Dd]ebug/
+*.Tests/[Dd]ebugPublic/
+*.Tests/[Rr]elease/
+*.Tests/[Rr]eleases/
+*.Tests/x64/
+*.Tests/x86/
+*.Tests/[Ww][Ii][Nn]32/
+*.Tests/[Aa][Rr][Mm]/
+*.Tests/[Aa][Rr][Mm]64/
+*.Tests/bld/
+*.Tests/[Oo]bj/
+*.Tests/[Ll]og/
+*.Tests/[Ll]ogs/
+*.Tests/bin/
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/
