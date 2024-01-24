@@ -828,3 +828,6 @@ terraform/*.tfstate*
 terraform/*.tfplan
 terraform/variables.tf
 terraform/*.key
+
+# Ansible
+vault.yml
