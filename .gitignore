@@ -814,8 +814,10 @@ Secrets.json
 .setup_done
 
 # Azure B2C
-/**/src/custom-policies/B2C_1A_*_*_SIGNINSIGNOUT_*.xml
-/custom-policies/**/B2C_1A_*_*_SIGNINSIGNOUT_*.xml
+**/B2C_1A_*SIGNINSIGNOUT*.xml
+**/B2C_1A_*IMPERSONATION*.xml
+dist/index.html
+.parcel-cache/
 
 # Azure Functions
 *.Functions/Properties/ServiceDependencies/*/*.json
