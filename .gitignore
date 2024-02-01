@@ -152,6 +152,7 @@ wp-content/shield/
 /wp-content/plugins/wpengine-snapshot/snapshots
 /wp-content/mysql.sql
 /.wpe-devkit
+/site-archive-*-live-*-*/
 
 # Large and binary files
 # NOTE:
