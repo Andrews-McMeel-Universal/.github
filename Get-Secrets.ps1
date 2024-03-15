@@ -1,58 +1,81 @@
 param (
-    [string]$TenantName = "Andrews McMeel Universal",
-    [string]$SubscriptionName = "AMU Pay-as-you-go",
     [string]$KeyVaultName,
     [string]$File = '.env',
     [string]$RepositoryName = ((git remote get-url origin).Split("/")[-1].Replace(".git", "")),
-    [string]$Environment = "development"
+    [string]$Environment = "development",
+    [switch]$Verbose = $false
 )
 
-# Check to see if Azure PowerShell Module is installed
-if (!(Get-Module -ListAvailable Az.KeyVault)) {
-    Write-Host "Installing Azure Powershell Module..."
-    Install-Module -Name Az.KeyVault -Confirm:$false
-}
+$TenantName = "Andrews McMeel Universal"
+$SubscriptionName = "AMU Pay-as-you-go"
 
-# Check if user needs to log in
-if (!(Get-AzContext)) {
-    Write-Host "Cannot retrieve AzContext. Running 'Connect-AzAccount'" -ForegroundColor DarkGray
-    [void](Connect-AzAccount -Subscription $SubscriptionName -Force)
-}
 
-# Check if tenant is available
-$Tenant = Get-AzTenant -ErrorAction SilentlyContinue | Where-Object Name -Match "$TenantName"
-if (!$Tenant) {
-    Write-Error "Cannot retrieve '$TenantName' tenant. Please try logging in with 'Connect-AzAccount'"
-    return
-}
+function Get-KeyVaultName {
+    param (
+        [string]$RepositoryName,
+        [string]$Environment,
+        [switch]$Verbose
+    )
 
-# Switch to the correct subscription and tenant
-[void](Set-AzContext -SubscriptionName $SubscriptionName -Tenant $Tenant.Id)
-Write-Host "AzContext set to 'TenantName=$TenantName' and 'SubscriptionName=$SubscriptionName'" -ForegroundColor DarkGray
-
-# Clear temporary file
-Clear-Content -Path "${File}.tmp" -ErrorAction SilentlyContinue
-
-# Check if searching for key vaults by repository name or otherwise, if key vault name argument is given
-if (!$PSBoundParameters.ContainsKey('KeyVaultName')) {
-    # If $Environment argument isn't set, use default value
-    if (!$PSBoundParameters.ContainsKey('Environment')) {
-        Write-Host "Environment missing. Defaulting to $Environment." -ForegroundColor DarkGray
+    if ($Verbose) {
+        $VerbosePreference = 'Continue'
     }
 
     # Search for key vault using tags
-    Write-Host "Searching for key vault with tags: 'repository-name=$RepositoryName;environment=$Environment'" -ForegroundColor DarkGray
-    $KeyVaultName = (Get-AzKeyVault -Tag @{"environment" = "$Environment" } | Get-AzKeyVault -Tag @{"repository-name" = "$RepositoryName" }).VaultName
+    if ($Environment) {
+        Write-Verbose "Searching for key vault with tags: 'repository-name=$RepositoryName;environment=$Environment'"
+        $KeyVaultName = (Get-AzKeyVault -Tag @{"environment" = "$Environment" } | Get-AzKeyVault -Tag @{"repository-name" = "$RepositoryName" }).VaultName
+    }
+    else {
+        Write-Verbose "Searching for key vaults with tag: 'repository-name=$RepositoryName'"
+        $KeyVaultName = (Get-AzKeyVault -Tag @{"repository-name" = "$RepositoryName" }).VaultName
+    }
 
     # Check if key vault name is empty
     if (!$KeyVaultName) {
         Write-Error "Key vault name cannot be found. Please confirm this repository's key vaults are tagged correctly."
         return
     }
+    else {
+        return $KeyVaultName
+    }
 }
-else {
-    # Just output KeyVaultName if passed as an argument
-    Write-Host "Searching for key vault named: $KeyVaultName" -ForegroundColor DarkGray
+
+function Set-AzureContext {
+    param (
+        [string]$SubscriptionName,
+        [string]$TenantName
+    )
+
+    # Check to see if Azure PowerShell Module is installed
+    if (!(Get-Module -ListAvailable Az.KeyVault)) {
+        Write-Host "Installing Azure Powershell Module..."
+        Install-Module -Name Az.KeyVault -Confirm:$false
+    }
+
+    # Check if user needs to log in
+    if (!(Get-AzContext)) {
+        Write-Output "Cannot retrieve AzContext. Running 'Connect-AzAccount'"
+        [void](Connect-AzAccount -Subscription $SubscriptionName -Force)
+    }
+
+    # Check if tenant is available
+    $Tenant = Get-AzTenant -ErrorAction SilentlyContinue | Where-Object Name -match "$TenantName"
+    if (!$Tenant) {
+        Write-Error "Cannot retrieve '$TenantName' tenant. Please try logging in with 'Connect-AzAccount'"
+        return
+    }
+
+    # Switch to the correct subscription and tenant
+    [void](Set-AzContext -SubscriptionName $SubscriptionName -Tenant $Tenant.Id)
+}
+
+# Set Azure context
+Set-AzureContext -SubscriptionName $SubscriptionName -TenantName $TenantName
+
+# Get key vault name
+if (!$PSBoundParameters.ContainsKey('KeyVaultName')) {
+    $KeyVaultName = Get-KeyVaultName -RepositoryName $RepositoryName -Environment $Environment -Verbose:$Verbose
 }
 
 # Get key vault object
@@ -71,7 +94,8 @@ $Secrets = (Get-AzKeyVaultSecret -VaultName "$KeyVaultName").Name
 # Create secret hash
 $SecretHash = @()
 
-# Loop through secrets and add them to ${File}.tmp
+# Loop through secrets and add them to the temporary file
+Clear-Content -Path "${File}.tmp" -ErrorAction SilentlyContinue
 Write-Host "Retrieving secrets..." -ForegroundColor DarkGray
 $Secrets | ForEach-Object {
     # Set secret object
@@ -96,9 +120,7 @@ $Secrets | ForEach-Object {
 # Output secret variable
 $SecretHash | Format-Table
 
-# Copy the temporary file over the original file
+# Finish up
 Copy-Item -Path "${File}.tmp" -Destination "${File}"
-Remove-Item -Path "${File}.tmp"-Force -ErrorAction SilentlyContinue
-
-# Output success
-Write-Host "✨ .env file generated from $KeyVaultName" -ForegroundColor Green
+Remove-Item -Path "${File}.tmp" -Force -ErrorAction SilentlyContinue
+Write-Host "✨ ${File} file generated" -ForegroundColor Green

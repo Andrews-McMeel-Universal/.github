@@ -1,63 +1,113 @@
 param (
-    [string]$TenantName = "Andrews McMeel Universal",
-    [string]$SubscriptionName = "AMU Pay-as-you-go",
     [string]$File = 'Secrets.json',
     [string]$RepositoryName = (git remote get-url origin).Split("/")[-1].Replace(".git", ""),
-    [string]$SetFile = 'Set-Secrets.ps1',
     [string]$KeyVaultName,
     [string]$SecretName,
     [switch]$VersionHistory = $false,
     [int]$VersionHistoryLength = 10,
-    [switch]$Force
+    [switch]$Force,
+    [switch]$Verbose = $false
 )
 
-# Check to see if Azure PowerShell Module is installed
-if (!(Get-Module -ListAvailable Az.KeyVault)) {
-    Write-Host "Installing Azure Powershell Module..."
-    Install-Module -Name Az.KeyVault -Confirm:$false
+$TenantName = "Andrews McMeel Universal"
+$SubscriptionName = "AMU Pay-as-you-go"
+$SetFile = 'Set-Secrets.ps1'
+
+function Test-FileExists {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$FilePath
+    )
+
+    if ((Test-Path $FilePath) -and (! $Force)) {
+        # Compare current and working files
+        if (((Get-FileHash "${SecretValue}.tmp").Hash) -ne ((Get-FileHash $FilePath).Hash)) {
+            # Ask user if they want to overwrite their existing file
+            $choice = $(Write-Host "File '$FilePath' exists. Overwrite? (y/N)" -ForegroundColor Yellow; Read-Host)
+            if ($choice.ToUpper() -eq "N") {
+                Write-Host "No changes made to $FilePath" -ForegroundColor DarkGray
+                Remove-Item -Path "${SecretValue}.tmp" -ErrorAction SilentlyContinue
+                return $false
+            }
+        }
+        else {
+            Write-Host "File $FilePath is already up-to-date." -ForegroundColor DarkGray
+            Remove-Item -Path "${SecretValue}.tmp" -ErrorAction SilentlyContinue
+            return $false
+        }
+    }
+    return $true
 }
 
-# Check if user needs to log in
-if (!(Get-AzContext)) {
-    Write-Host "Cannot retrieve AzContext. Running 'Connect-AzAccount'" -ForegroundColor DarkGray
-    [void](Connect-AzAccount -Subscription $SubscriptionName -Force)
+function Get-KeyVaultName {
+    param (
+        [string]$RepositoryName,
+        [switch]$Verbose
+    )
+
+    if ($Verbose) {
+        $VerbosePreference = 'Continue'
+    }
+
+    # Search for key vault using tags
+    Write-Verbose "Searching for key vaults with tag: 'repository-name=$RepositoryName'"
+    $KeyVaultName = (Get-AzKeyVault -Tag @{"repository-name" = "$RepositoryName" }).VaultName
+
+    # Check if key vault name is empty
+    if (!$KeyVaultName) {
+        Write-Error "Key vault name cannot be found. Please confirm this repository's key vaults are tagged correctly."
+        return
+    }
+    else {
+        return $KeyVaultName
+    }
 }
 
-# Check if tenant is available
-$Tenant = Get-AzTenant -ErrorAction SilentlyContinue | Where-Object Name -match "$TenantName"
-if (!$Tenant) {
-    Write-Error "Cannot retrieve '$TenantName' tenant. Please try logging in with 'Connect-AzAccount'"
-    return
+function Set-AzureContext {
+    param (
+        [string]$SubscriptionName,
+        [string]$TenantName
+    )
+
+    # Check to see if Azure PowerShell Module is installed
+    if (!(Get-Module -ListAvailable Az.KeyVault)) {
+        Write-Host "Installing Azure Powershell Module..."
+        Install-Module -Name Az.KeyVault -Confirm:$false
+    }
+
+    # Check if user needs to log in
+    if (!(Get-AzContext)) {
+        Write-Output "Cannot retrieve AzContext. Running 'Connect-AzAccount'"
+        [void](Connect-AzAccount -Subscription $SubscriptionName -Force)
+    }
+
+    # Check if tenant is available
+    $Tenant = Get-AzTenant -ErrorAction SilentlyContinue | Where-Object Name -match "$TenantName"
+    if (!$Tenant) {
+        Write-Error "Cannot retrieve '$TenantName' tenant. Please try logging in with 'Connect-AzAccount'"
+        return
+    }
+
+    # Switch to the correct subscription and tenant
+    [void](Set-AzContext -SubscriptionName $SubscriptionName -Tenant $Tenant.Id)
 }
 
-# Switch to the correct subscription and tenant
-[void](Set-AzContext -SubscriptionName $SubscriptionName -Tenant $Tenant.Id)
-Write-Host "AzContext set to 'TenantName=$TenantName' and 'SubscriptionName=$SubscriptionName'" -ForegroundColor DarkGray
+# Set Azure context
+Set-AzureContext -SubscriptionName $SubscriptionName -TenantName $TenantName
 
-# Don't clear the ${File}.tmp file if using the VersionHistory option
+# Get key vault name
+if (!$PSBoundParameters.ContainsKey('KeyVaultName')) {
+    $KeyVaultName = Get-KeyVaultName -RepositoryName $RepositoryName -Verbose:$Verbose
+}
+
+# Clear file if not viewing version history
 if (!$VersionHistory) {
     Clear-Content -Path "${File}.tmp" -ErrorAction SilentlyContinue
 }
 
-# Get key vault names
-if (!$PSBoundParameters.ContainsKey('KeyVaultName')) {
-    Write-Host "Searching for key vaults with tag: 'repository-name=$RepositoryName'" -ForegroundColor DarkGray
-    $KeyVaultNames = (Get-AzKeyVault -Tag @{"repository-name" = "$RepositoryName" }).VaultName
-
-    if ($KeyVaultNames) {
-        Write-Host "Key vaults found: $KeyVaultNames" -ForegroundColor DarkGray
-    }
-    else {
-        Write-Error "No key vaults found. Please make sure the key vault is tagged correctly"  -ForegroundColor Red
-    }
-}
-else {
-    $KeyVaultNames = $KeyVaultName
-}
-
 # Create key vaults dictionary
 $KeyVaults = New-Object PSCustomObject
-$KeyVaultNames | ForEach-Object {
+$KeyVaultName | ForEach-Object {
     $KeyVaultName = $_
     Write-Host "Generating secrets for $KeyVaultName..." -ForegroundColor DarkGray
     
@@ -140,29 +190,10 @@ if ($VersionHistory) {
 
 Add-Content -Path "${File}.tmp" -Value ($KeyVaults | ConvertTo-Json)
 
-# Check if ${File} already exists before proceeding
-if ((Test-Path "${File}") -and (! $Force)) {
-    # Compare current and working files
-    if (((Get-FileHash "${File}.tmp").Hash) -ne ((Get-FileHash "${File}").Hash)) {
-        # Ask user if they want to overwrite their existing ${File}
-        $choice = $(Write-Host "File '$File' exists. Overwrite? (y/N)" -ForegroundColor Yellow; Read-Host)
-        if ($choice.ToUpper() -eq "N") {
-            Write-Host "No changes made to $File" -ForegroundColor DarkGray
-            Remove-Item -Path "${File}.tmp" -ErrorAction SilentlyContinue
-            # Exit out if user chooses not to overwrite the file
-            exit 0
-        }
-    }
-    else {
-        Write-Host "No changes made to file '$File'" -ForegroundColor DarkGray
-        Remove-Item -Path "${File}.tmp" -ErrorAction SilentlyContinue
-        # Exit out if the hashes are the same
-        exit 0
-    }
+# Finish up
+if (Test-FileExists -FilePath $SecretValue) {
+    Copy-Item -Path "${File}.tmp" -Destination "${File}"
+    Remove-Item -Path "${File}.tmp" -Force -ErrorAction SilentlyContinue
+    Write-Host "✨ ${File} file generated" -ForegroundColor Green
+    Write-Host "Once you've finished editing $File, please update this project's Azure Key Vaults by running '$SetFile'" -ForegroundColor Yellow
 }
-
-Copy-Item -Path "${File}.tmp" -Destination "${File}"
-Remove-Item -Path "${File}.tmp" -ErrorAction SilentlyContinue
-
-Write-Host "✨ File '$File' generated" -ForegroundColor Green
-Write-Host "Once you've finished editing $File, please update this project's Azure Key Vaults by running '$SetFile'" -ForegroundColor Yellow

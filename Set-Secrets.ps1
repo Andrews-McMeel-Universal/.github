@@ -1,37 +1,47 @@
 param (
-    [string]$TenantName = "Andrews McMeel Universal",
-    [string]$SubscriptionName = "AMU Pay-as-you-go",
-    [string]$KeyVaultRG = "AMU_KeyVaults_RG",
-    [string]$File = "Secrets.json",
     [string]$KeyVaultName = ".*",
-    [string]$SecretName = ".*"
+    [string]$File = "Secrets.json",
+    [string]$RepositoryName = ((git remote get-url origin).Split("/")[-1].Replace(".git", "")),
+    [string]$SecretName = ".*",
+    [switch]$Verbose = $false
 )
 
-# Check to see if Azure PowerShell Module is installed
-if (!(Get-Module -ListAvailable Az.KeyVault)) {
-    Write-Host "Installing Azure Powershell Module..."
-    Install-Module -Name Az.KeyVault -Confirm:$false
+$TenantName = "Andrews McMeel Universal"
+$SubscriptionName = "AMU Pay-as-you-go"
+$TerraformRG = "AMU_Serverless_RG"
+$KeyVaultRG = "AMU_KeyVaults_RG"
+
+function Set-AzureContext {
+    param (
+        [string]$SubscriptionName,
+        [string]$TenantName
+    )
+
+    # Check to see if Azure PowerShell Module is installed
+    if (!(Get-Module -ListAvailable Az.KeyVault)) {
+        Write-Host "Installing Azure Powershell Module..."
+        Install-Module -Name Az.KeyVault -Confirm:$false
+    }
+
+    # Check if user needs to log in
+    if (!(Get-AzContext)) {
+        Write-Output "Cannot retrieve AzContext. Running 'Connect-AzAccount'"
+        [void](Connect-AzAccount -Subscription $SubscriptionName -Force)
+    }
+
+    # Check if tenant is available
+    $Tenant = Get-AzTenant -ErrorAction SilentlyContinue | Where-Object Name -match "$TenantName"
+    if (!$Tenant) {
+        Write-Error "Cannot retrieve '$TenantName' tenant. Please try logging in with 'Connect-AzAccount'"
+        return
+    }
+
+    # Switch to the correct subscription and tenant
+    [void](Set-AzContext -SubscriptionName $SubscriptionName -Tenant $Tenant.Id)
 }
 
-# Check if user needs to log in
-if (!(Get-AzContext)) {
-    Write-Host "Cannot retrieve AzContext. Running 'Connect-AzAccount'" -ForegroundColor DarkGray
-    [void](Connect-AzAccount -Subscription $SubscriptionName -Force)
-}
-
-# Check if tenant is available
-$Tenant = Get-AzTenant -ErrorAction SilentlyContinue | Where-Object Name -match "$TenantName"
-if (!$Tenant) {
-    Write-Error "Cannot retrieve '$TenantName' tenant. Please try logging in with 'Connect-AzAccount'"
-    return
-}
-
-# Switch to the correct subscription and tenant
-[void](Set-AzContext -SubscriptionName $SubscriptionName -Tenant $Tenant.Id)
-Write-Host "AzContext set to 'TenantName=$TenantName' and 'SubscriptionName=$SubscriptionName'" -ForegroundColor DarkGray
-
-# Get repository name from git origin url
-$RepositoryName = ((git remote get-url origin).Split("/")[-1].Replace(".git", ""))
+# Set Azure context
+Set-AzureContext -SubscriptionName $SubscriptionName -TenantName $TenantName
 
 # Filter by $KeyVaultName argument
 $KeyVaults = (Get-Content -Path $File | ConvertFrom-Json).PSObject.Properties | Where-Object Name -imatch $KeyVaultName
@@ -54,8 +64,13 @@ $KeyVaults | ForEach-Object {
     }
     else {
         # Create key vault with proper tags
-        $KeyVault = New-AzKeyVault -Name $KeyVaultName -ResourceGroupName "$KeyVaultRG" -Sku Standard -EnableRbacAuthorization -Location 'Central US' -Tag @{"environment" = "$Environment"; "repository-name" = "$RepositoryName" } -ErrorAction SilentlyContinue
-        Write-Host "[$KeyVaultName] Created Azure Key Vault with correct tags" -ForegroundColor Green
+        $KeyVault = New-AzKeyVault -Name $KeyVaultName -ResourceGroupName "$KeyVaultRG" -Sku Standard -EnableRbacAuthorization -Location 'Central US' -Tag @{"repository-name" = "$RepositoryName" }
+        if ($KeyVault) {
+            Write-Host "[$KeyVaultName] Created Azure Key Vault with correct tags" -ForegroundColor Green
+        }
+        else {
+            Write-Error "[$KeyVaultName] Failed to create Azure Key Vault with correct tags"
+        }
     }
 
     # Filter by $SecretName argument
@@ -74,10 +89,15 @@ $KeyVaults | ForEach-Object {
         # If value or ContentType is different, update the secret
         if (($CurrentValue -ne $SecretValue) -or ($CurrentContentType -ne $ContentType)) {
             $Secret = Set-AzKeyVaultSecret -VaultName $KeyVaultName -SecretName "$SecretNameLower" -SecretValue ("$SecretValue" | ConvertTo-SecureString -AsPlainText -Force) -ContentType "$ContentType"
-            Write-Host "[$KeyVaultName] Secret updated: $($_.SecretName)" -ForegroundColor Green
+            if ($Secret) {
+                Write-Host "[$KeyVaultName] Secret updated: $($_.SecretName)" -ForegroundColor Green
+            }
+            else {
+                Write-Error "[$KeyVaultName] Secret failed to update: $($_.SecretName)"
+            }
         }
         else {
-            Write-Host "[$KeyVaultName] Secret not updated: $($_.SecretName)" -ForegroundColor DarkGray
+            Write-Host "[$KeyVaultName] Secret is up-to-date: $($_.SecretName)" -ForegroundColor DarkGray
         }
     }
 }
