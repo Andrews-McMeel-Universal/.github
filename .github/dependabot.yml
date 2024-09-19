@@ -98,3 +98,19 @@ updates:
     commit-message:
       # Prefix all commit messages with 'nuget'
       prefix: "nuget"
+
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      day: "monday"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    labels:
+      - "back-end"
+      - "dependencies"
+    open-pull-requests-limit: 10
+    commit-message:
+      # Prefix all commit messages with 'go'
+      prefix: "go"
