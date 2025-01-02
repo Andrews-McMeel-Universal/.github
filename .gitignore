@@ -849,3 +849,6 @@ data/db
 data/meta
 data/models
 data/state
+
+# Syndication
+public/uu_site/
