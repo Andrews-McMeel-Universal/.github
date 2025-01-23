@@ -14,9 +14,6 @@ jobs:
     if: ${{ github.actor != 'dependabot[bot]' && github.actor != 'amutechtest' && github.ref != 'refs/heads/development' && github.ref != 'refs/heads/main' }}
     name: Jira PR Linter
     uses: Andrews-McMeel-Universal/reusable_workflows/.github/workflows/jira-lint.yaml@latest
-    with:
-      fail-on-error: ${{ vars.JIRA_LINT_FAIL_ON_ERROR || 'false' }}
-      skip-comments: ${{ vars.JIRA_LINT_SKIP_COMMENTS || 'true' }}
     secrets:
       JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
 
@@ -24,9 +21,6 @@ jobs:
     if: ${{ github.actor != 'dependabot[bot]' }}
     name: Simple Lint
     uses: Andrews-McMeel-Universal/reusable_workflows/.github/workflows/simple-lint.yaml@latest
-    with:
-      runPrettier: ${{ vars.SIMPLE_LINT_RUN_PRETTIER != 'false' }}
-      prettierPlugins: ${{ vars.INSTALL_PRETTIER_PLUGINS }}
     secrets:
       PAT_ACTION_CI: ${{ secrets.PAT_ACTION_CI }}
 
