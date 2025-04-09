@@ -17,6 +17,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Draft Release Notes
-        uses: release-drafter/release-drafter@v6
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: Andrews-McMeel-Universal/reusable_workflows/.github/workflows/release-drafter.yaml@latest
+        secrets:
+          PAT_ACTION_CI: ${{ secrets.PAT_ACTION_CI }}
