@@ -195,6 +195,7 @@ wp-content/shield/
 ## Environment normalization:
 /.bundle
 /vendor/bundle
+/vendor/cache
 
 # these should all be checked in to normalize the environment:
 # Gemfile.lock, .ruby-version, .ruby-gemset
@@ -456,6 +457,20 @@ SharedLibraries/*/bin/
 *.Tests/[Ll]og/
 *.Tests/[Ll]ogs/
 *.Tests/bin/
+*.Application/[Dd]ebug/
+*.Application/[Dd]ebugPublic/
+*.Application/[Rr]elease/
+*.Application/[Rr]eleases/
+*.Application/x64/
+*.Application/x86/
+*.Application/[Ww][Ii][Nn]32/
+*.Application/[Aa][Rr][Mm]/
+*.Application/[Aa][Rr][Mm]64/
+*.Application/bld/
+*.Application/[Oo]bj/
+*.Application/[Ll]og/
+*.Application/[Ll]ogs/
+*.Application/bin/
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/
@@ -487,6 +502,9 @@ project.lock.json
 project.fragment.lock.json
 artifacts/
 
+# Tye
+.tye/
+
 # ASP.NET Scaffolding
 ScaffoldingReadMe.txt
 
@@ -507,6 +525,8 @@ StyleCopReport.xml
 *.pgc
 *.pgd
 *.rsp
+# but not Directory.Build.rsp, as it configures directory-level build defaults
+!Directory.Build.rsp
 *.sbr
 *.tlb
 *.tli
@@ -584,6 +604,9 @@ nCrunchTemp_*
 # MightyMoose
 *.mm.*
 AutoTest.Net/
+
+# Web workbench (sass)
+.sass-cache/
 
 # Installshield output folder
 [Ee]xpress/
@@ -722,6 +745,10 @@ FakesAssemblies/
 *.dsw
 *.dsp
 
+# Visual Studio 6 technical files
+*.ncb
+*.aps
+
 # Visual Studio LightSwitch build output
 **/*.HTMLClient/GeneratedArtifacts
 **/*.DesktopClient/GeneratedArtifacts
@@ -806,7 +833,11 @@ FodyWeavers.xsd
 
 # Windows Installer files from build outputs
 *.cab
+*.msi
 *.msix
+*.msm
+*.msp
+.idea/
 
 # JetBrains Rider
 *.sln.iml
@@ -834,6 +865,7 @@ FodyWeavers.xsd
 
 # UI Applications
 next-env.d.ts
+*.tsbuildinfo
 
 # dependencies
 /.pnp
@@ -895,3 +927,82 @@ data/state
 
 # Syndication
 public/uu_site/
+
+##
+## Visual studio for Mac
+##
+
+
+# globs
+Makefile.in
+*.userprefs
+*.usertasks
+config.make
+config.status
+aclocal.m4
+install-sh
+autom4te.cache/
+*.tar.gz
+tarballs/
+test-results/
+
+# content below from: https://github.com/github/gitignore/blob/main/Global/macOS.gitignore
+# General
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Icon must end with two \r
+Icon
+
+
+# Thumbnails
+._*
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# content below from: https://github.com/github/gitignore/blob/main/Global/Windows.gitignore
+# Windows thumbnail cache files
+Thumbs.db
+ehthumbs.db
+ehthumbs_vista.db
+
+# Dump file
+*.stackdump
+
+# Folder config file
+[Dd]esktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+# Windows Installer files
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+
+# Windows shortcuts
+*.lnk
+
+# Vim temporary swap files
+*.swp
+
+# Other
+Secrets.json
+launchSettings.json
